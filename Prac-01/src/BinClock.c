@@ -1,4 +1,4 @@
-/*
+#/*
  * BinClock.c
  * Jarrod Olivier
  * Modified by Keegan Crankshaw
@@ -89,7 +89,7 @@ int main(void){
 
 	//Set random time (3:04PM)
 	//You can comment this file out later
-	wiringPiI2CWriteReg8(RTC, HOUR_REGISTER, 0x19);
+	wiringPiI2CWriteReg8(RTC, HOUR_REGISTER, 0x17);
 	wiringPiI2CWriteReg8(RTC, MIN_REGISTER, 0x59);
 	wiringPiI2CWriteReg8(RTC, SEC_REGISTER, 0x55);
 	
@@ -105,7 +105,15 @@ int main(void){
 		digitalWrite(0,!digitalRead(0));
 		
 		// Print out the time we have stored on our RTC
-		printf("The current time is: %x:%x:%x\n", hours, mins, secs);
+		if (decCompensation(hours) >=  0x24) {
+			hours = 0;
+			wiringPiI2CWriteReg8(RTC,HOUR_REGISTER,0);
+		}
+		if (decCompensation(mins) >= 0x60) {
+			mins = 0;
+			wiringPiI2CWriteReg8(RTC,MIN_REGISTER,0);
+		}
+		printf("The current time is: %x:%x:%x\n", decCompensation(hours), decCompensation(mins), secs);
 
 		//using a delay to make our program "less CPU hungry"
 		delay(1000); //milliseconds
@@ -193,7 +201,7 @@ void hourInc(void){
 	long interruptTime = millis();
 	unsigned char tempHour;
 	if (interruptTime - lastInterruptTime>200){
-		printf("Interrupt 1 triggered, %x\n", hours);
+		printf("Interrupt 1 triggered, %d\n", hours);
 		//Fetch RTC Time
 		tempHour  = wiringPiI2CReadReg8(RTC, HOUR_REGISTER);
 
